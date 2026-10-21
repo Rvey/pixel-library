@@ -59,6 +59,8 @@ The first time an EPUB is shelved, it takes a few seconds to typeset. After that
 
 The shelf appears above the message box. Type `/lib` again to hide it.
 
+![The shelf in the Claude desktop app](docs/in-app.png)
+
 ### 3. Pick a book
 
 - **Mouse:** hover a spine and click the button that appears, or click the number under the spine.
