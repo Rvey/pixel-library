@@ -1,0 +1,10 @@
+{
+  "name": "pixel-library",
+  "version": "0.2.0",
+  "description": "A retro pixel bookshelf of your local PDFs and EPUBs to read while Claude works. Open it with /lib.",
+  "author": { "name": "Rvey", "url": "https://github.com/Rvey" },
+  "repository": "https://github.com/Rvey/pixel-library",
+  "license": "MIT",
+  "keywords": ["mod", "library", "reader", "pdf", "epub", "pixel-art"],
+  "types": "./types/index.d.ts"
+}

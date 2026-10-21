@@ -1,0 +1,11 @@
+{
+  "name": "pixel-library",
+  "owner": { "name": "Rvey" },
+  "plugins": [
+    {
+      "name": "pixel-library",
+      "source": "./",
+      "description": "A retro pixel bookshelf of your local PDFs and EPUBs to read while Claude works. Open it with /lib."
+    }
+  ]
+}
