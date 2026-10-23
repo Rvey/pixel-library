@@ -138,7 +138,7 @@ function cleanPath(raw: string, home: string): string {
   if (path.startsWith('file://')) path = decodeURIComponent(path.slice(7))
   path = path.replace(/\\(.)/g, '$1')
   if (path === '~' || path.startsWith('~/')) path = home + path.slice(1)
-  return path
+  return path.replace(/\/+$/, '')
 }
 
 async function addBook($: EngineInterface, raw: string): Promise<string> {
@@ -147,14 +147,23 @@ async function addBook($: EngineInterface, raw: string): Promise<string> {
   const src = cleanPath(raw, home)
   if (src === '') return 'Give me the path of a PDF or EPUB.'
   if (!BOOK_FILE.test(src)) return `Not a PDF or EPUB: ${src}`
-  if (!(await $.fs.exists(src)) || (await $.fs.stat(src)).kind !== 'file') return `No file at ${src}`
+  if (!(await $.fs.exists(src))) return `No file at ${src}`
+  const kind = (await $.fs.stat(src)).kind
+  // Apple Books keeps an EPUB as a folder; it is zipped back into one file, mimetype first and stored.
+  const isFolderEpub = kind === 'dir' && /\.epub$/i.test(src)
+  if (kind !== 'file' && !isFolderEpub) return `No file at ${src}`
   const name = src.split('/').pop() ?? 'book.pdf'
   const dest = `${p.lib}/${name}`
   if (await $.fs.exists(dest)) return `"${prettyName(name)}" is already on the shelf.`
   await update($, isBusy, () => true)
   try {
-    const copy = await $.process.run(['cp', src, dest])
-    if (copy.exitCode !== 0) return `Could not copy it: ${copy.stderr.trim()}`
+    const copy = isFolderEpub
+      ? await $.process.run(['/bin/sh', '-c', 'cd "$1" && zip -qX0 "$2" mimetype && zip -qrX9 "$2" . -x mimetype -x .DS_Store', 'pack', src, dest])
+      : await $.process.run(['cp', src, dest])
+    if (copy.exitCode !== 0) {
+      await $.process.run(['rm', '-f', dest])
+      return `Could not copy it: ${copy.stderr.trim()}`
+    }
     await scan($)
   } finally {
     await update($, isBusy, () => false)

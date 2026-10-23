@@ -47,6 +47,8 @@ Any of these work:
 /lib add ~/Downloads/another-book.epub
 ```
 
+Books from Apple Books work too: their EPUBs are folders on disk, and `/lib add` packs them back into a single `.epub`.
+
 Or drop `.pdf` and `.epub` files straight into `~/.claude/library` (`/lib folder` opens it in Finder), then type `/lib` to rescan.
 
 The first time an EPUB is shelved, it takes a few seconds to typeset. After that it opens instantly.
