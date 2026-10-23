@@ -10,7 +10,6 @@ const PAGE_WIDTH = 600
 // Each page is its own Svg, held to 131072 characters: the page's bytes stay
 // under this so, base64'd, they fit with the frame around them.
 const PAGE_MAX_BYTES = 90000
-const AUTO_OPEN_AFTER_MS = 8000
 
 const books = atom({ plugin: 'pixel-library', key: 'books' } as const, [])
 const view = atom({ plugin: 'pixel-library', key: 'view' } as const, { mode: 'shelf' })
@@ -28,8 +27,6 @@ let ready: Promise<Paths> | undefined
 let isTwoUp = true
 let loadSeq = 0
 let noteTimer: Timer | undefined
-let autoTimer: Timer | undefined
-let wasAutoOpened = false
 
 function setup($: EngineInterface): Promise<Paths> {
   ready ??= (async () => {
@@ -232,10 +229,6 @@ async function turn($: EngineInterface, by: number | 'first' | 'last'): Promise<
   await showPage($, v.id, target)
 }
 
-async function isOpen($: EngineInterface): Promise<boolean> {
-  return (await $.ui.panes()).some(pane => pane.id === PANE)
-}
-
 async function openPane($: EngineInterface, focus: boolean): Promise<void> {
   await $.ui.open(focus ? { id: PANE, title: 'Library', focus: true } : { id: PANE, title: 'Library' })
   void scan($).catch(error => say($, `Could not read the shelf: ${String(error)}`))
@@ -245,8 +238,8 @@ export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'lib',
-      description: 'Open the pixel library: read your PDFs and EPUBs while Claude works',
-      argumentHint: '[add <book.pdf|book.epub> | auto on|off | folder | <title>]',
+      description: 'Show or hide the pixel library: read your PDFs and EPUBs while Claude works',
+      argumentHint: '[add <book.pdf|book.epub> | folder | <title>]',
       immediate: true,
     })
     void setup($).catch(() => undefined)
@@ -260,11 +253,6 @@ export const register: Register = on => {
     if (verb === 'add') {
       await update($, isShelfShown, () => true)
       return { text: await addBook($, tail) }
-    }
-    if (verb === 'auto') {
-      const isOn = rest[0] !== 'off'
-      await $.store.set('auto', isOn)
-      return { text: isOn ? 'The library opens by itself when Claude works for a while.' : 'The library opens only with /lib.' }
     }
     if (verb === 'folder') {
       const p = await setup($)
@@ -287,31 +275,6 @@ export const register: Register = on => {
     await scan($)
     const count = (await read($, books)).length
     return { text: `Library shelf shown above the prompt: ${count === 1 ? '1 book' : `${count} books`}. Click a spine's number, or ctrl+x tab then 1-9 / Tab and Enter.` }
-  })
-
-  on('prompt.submit', async ($, e, next) => {
-    autoTimer?.cancel()
-    const isAuto = ((await $.store.get('auto')) as boolean | undefined) ?? true
-    if (isAuto && e.command === undefined) {
-      autoTimer = $.clock.after(AUTO_OPEN_AFTER_MS, () => {
-        void (async () => {
-          if (await isOpen($)) return
-          wasAutoOpened = true
-          await openPane($, false)
-        })()
-      })
-    }
-    return next(e)
-  }).catch(($, e, next) => next(e))
-
-  on('turn.complete', async ($, e, next) => {
-    autoTimer?.cancel()
-    // An auto-opened shelf nobody picked a book from goes away with the turn.
-    if (wasAutoOpened && (await read($, view)).mode === 'shelf' && (await isOpen($))) {
-      await $.ui.close({ id: PANE })
-    }
-    wasAutoOpened = false
-    return next(e)
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {

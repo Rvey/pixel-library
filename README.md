@@ -8,7 +8,7 @@ A retro pixel-art bookshelf for Claude Code. Shelve your own PDFs and EPUBs, the
 - **A real book reader.** Picking a book opens it in the side pane as two facing pages on a leather board, with page numbers, a progress ribbon and your place remembered per book.
 - **PDF and EPUB.** PDFs are drawn page by page. EPUBs are typeset by macOS into proper pages, with headings, italics and their own cover.
 - **Local only.** Books live in `~/.claude/library` on your machine. Nothing is uploaded anywhere.
-- **Pops up while Claude works.** When a turn runs longer than 8 seconds, the library opens by itself, and closes again when the turn ends if you didn't pick a book.
+- **Only when you call it.** Nothing appears until you type `/lib`, and `/lib` again puts it away.
 
 ![Two facing pages in the reader](docs/reader.png)
 
@@ -80,7 +80,7 @@ The buttons under the pages do the same, plus first page, last page, **Go to pag
 
 ### The full bookcase
 
-When Claude works for a while and the library opens by itself, the side pane shows the whole bookcase: a stone wall, a carved sign, shelves of spines, cobwebs, a candle and a forgotten scroll.
+`/lib <title>` and the **b** key in the reader open the side pane on the whole bookcase: a stone wall, a carved sign, shelves of spines, cobwebs, a candle and a forgotten scroll.
 
 ![The full bookcase](docs/case.png)
 
@@ -92,11 +92,10 @@ When Claude works for a while and the library opens by itself, the side pane sho
 | `/lib add <path>` | shelve a PDF or EPUB |
 | `/lib <title>` | open the first book whose title matches |
 | `/lib folder` | open `~/.claude/library` in Finder |
-| `/lib auto on` / `/lib auto off` | let the library open by itself during long turns, or not |
 
 ## How it works
 
-- `hooks/register.tsx` is the mod: the `/lib` command, the shelf band above the prompt, the reader pane and the auto-open timer.
+- `hooks/register.tsx` is the mod: the `/lib` command, the shelf band above the prompt and the reader pane.
 - `hooks/pixel.ts` draws everything as SVG pixel art, including a hand-made 5×7 bitmap font, so the look doesn't depend on installed fonts.
 - `hooks/helper.ts` holds a small JavaScript-for-Automation script, run with `osascript`. It reads PDF info, draws pages to images with PDFKit, and typesets EPUB chapters into a 6×9″ PDF with the macOS text system.
 - Pages are cached in `~/.claude/library/.cache`, and your place in each book is remembered between sessions.
